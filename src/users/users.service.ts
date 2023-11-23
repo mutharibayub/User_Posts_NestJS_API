@@ -1,42 +1,42 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user-dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/typeorm';
-import { Repository } from 'typeorm';
+import { User } from 'src/models';
+import { InjectModel } from '@nestjs/sequelize';
 import { AuthService } from 'src/auth/auth.service';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
 export class UsersService {
 
   constructor(
-    @InjectRepository(User) private readonly user_repository: Repository<User>,
-    private authService: AuthService,
-    ) {}
+    @InjectModel(User)
+    private user_model: typeof User,
+    private auth_service: AuthService
+  ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
-    const existing_user =  await this.user_repository.findOne(
+    const existing_user: User = await this.user_model.findOne(
       { where:
         { email: createUserDto.email }
       }
-    )
-    if (existing_user != null) {
+    );
+    if (existing_user) {
       throw new BadRequestException("Account with this email already exists");
     }
-    const user = await this.user_repository.create(createUserDto)
-    return this.user_repository.save(user);
+    const user = new User({email: createUserDto.email, password: createUserDto.email, name: createUserDto.name});
+    return user.save();
   }
 
   async login(loginUserDto: LoginUserDto) {
-    const user = await this.user_repository.findOne(
-      {where: {email: loginUserDto.email}}
+    const user = await this.user_model.findOne(
+      {where: {email: loginUserDto.email, password: loginUserDto.password}}
     );
-    if (user.email !== loginUserDto.email || user.password !== loginUserDto.password) {
-      throw new UnauthorizedException();
+    if (!user) {
+      return new UnauthorizedException();
     }
     const payload = { sub: user.id, email: user.email };
     return ({
-      access_token: await this.authService.sign(payload),
+      access_token: await this.auth_service.sign(payload),
     });
     
   }

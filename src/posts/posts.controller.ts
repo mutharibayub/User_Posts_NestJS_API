@@ -1,9 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { DeletePostDto } from './dto/delete-post.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
-import { Post as PostEntity } from '../typeorm/post.entity'
+import { Post as PostEntity } from '../models/post.model'
 import { OperationSuccess } from 'src/dto/operation_sucess';
 
 @Controller('posts')
